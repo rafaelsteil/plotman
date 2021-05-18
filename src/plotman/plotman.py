@@ -171,7 +171,7 @@ def main():
         csv_exporter.export(logfilenames, args.save_to)
 
     else:
-        jobs = Job.get_running_jobs(cfg.directories.log())
+        jobs = Job.get_running_jobs(cfg.directories.log)
 
         # Status report
         if args.cmd == 'status':
