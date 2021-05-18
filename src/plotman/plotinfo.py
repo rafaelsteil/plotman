@@ -19,6 +19,10 @@ class PlotInfo:
     copy_time_raw: float = 0
     filename: str = ""
 
+    def is_empty(self) -> bool:
+      """Data is considered empty if no copy_time was found"""
+      return self.copy_time == 0
+
     # Phase 1 duration
     @property
     def phase1_duration(self) -> int:
