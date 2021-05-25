@@ -8,6 +8,7 @@ import re
 import subprocess
 import sys
 from datetime import datetime
+from collections import defaultdict
 
 import psutil
 import texttable as tt
@@ -100,6 +101,20 @@ def get_archdir_freebytes(arch_cfg):
             archdir_freebytes[archdir] = freebytes
     return archdir_freebytes
 
+def get_remote_plot_count_per_drive(arch_cfg):
+    targets = defaultdict(list)
+    df_cmd = ('ssh %s@%s -o LogLevel=QUIET -t plotman status' % (arch_cfg.rsyncd_user, arch_cfg.rsyncd_host))
+
+    with subprocess.Popen(df_cmd, shell=True, stdout=subprocess.PIPE) as proc:
+        for line in proc.stdout.readlines():
+            fields = line.decode('utf-8').split()
+
+            # fields[3] is the /farm/* path
+            if len(fields) > 4 and fields[3].startswith(arch_cfg.rsyncd_path):
+                targets[fields[3]].append(1)
+
+    return {k:len(v) for k,v in targets.items()}
+
 def rsync_dest(arch_cfg, arch_dir):
     rsync_path = arch_dir.replace(arch_cfg.rsyncd_path, arch_cfg.rsyncd_module)
     if rsync_path.startswith('/'):
@@ -158,8 +173,22 @@ def archive(dir_cfg, all_jobs):
     if not archdir_freebytes:
         return(False, 'No free archive dirs found.')
 
+    plots_per_drive = get_remote_plot_count_per_drive(dir_cfg.archive)
+
     archdir = ''
-    available = [(d, space) for (d, space) in archdir_freebytes.items() if plot_util.enough_space_for_k32(space)]
+    available = []
+
+    for (d, space) in archdir_freebytes.items():
+        if d in plots_per_drive:
+            # + 1 to be extra cautious, just in case a new plot is starting in the remote machine
+            multiplier = plots_per_drive[d] + 1
+        else:
+            # 2 because otherwise the multiplication below would consider enough space for just one extra plot
+            multiplier = 2
+
+        if plot_util.enough_space_for_k32(space - plot_util.get_k32_plotsize() * multiplier):
+            available.append((d, space))
+
     if len(available) > 0:
         index = min(dir_cfg.archive.index, len(available) - 1)
         (archdir, freespace) = sorted(available)[index]
@@ -167,7 +196,7 @@ def archive(dir_cfg, all_jobs):
     if not archdir:
         return(False, 'No archive directories found with enough free space')
 
-    msg = 'Found %s with ~%d GB free' % (archdir, freespace / plot_util.GB)
+    print('Found %s with ~%d GB free' % (archdir, freespace / plot_util.GB))
 
     bwlimit = dir_cfg.archive.rsyncd_bwlimit
     throttle_arg = ('--bwlimit=%d' % bwlimit) if bwlimit else ''
