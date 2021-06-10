@@ -9,9 +9,10 @@ import time
 import datetime
 
 # Plotman libraries
-from plotman import analyzer, archive, configuration, interactive, manager, plot_util, reporting, csv_exporter
+from plotman import analyzer, archive, configuration, interactive, manager, plot_util, reporting
 from plotman import resources as plotman_resources
 from plotman.job import Job
+from plotman.csv_exporter import CSvExporter
 
 
 class PlotmanArgParser:
@@ -42,6 +43,7 @@ class PlotmanArgParser:
 
         p_export = sp.add_parser('export', help='exports metadata from the plot logs as CSV')
         p_export.add_argument('-o', dest='save_to', default=None, type=str, help='save to file. Optional, prints to stdout by default')
+        p_export.add_argument('--skip-header', action='store_true', help="Don't include the CSV header")
 
         p_config = sp.add_parser('config', help='display or generate plotman.yaml configuration')
         sp_config = p_config.add_subparsers(dest='config_subcommand')
@@ -168,7 +170,7 @@ def main():
     #
     elif args.cmd == 'export':
         logfilenames = glob.glob(os.path.join(cfg.directories.log, '*'))
-        csv_exporter.export(logfilenames, args.save_to)
+        CSvExporter(args).export(logfilenames)
 
     else:
         jobs = Job.get_running_jobs(cfg.directories.log)
