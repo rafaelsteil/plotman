@@ -1,5 +1,7 @@
 import csv
 import sys
+import os
+import re
 from dateutil.parser import parse as parse_date
 from plotman.log_parser import PlotLogParser
 from plotman.plotinfo import PlotInfo
@@ -9,10 +11,12 @@ class CSvExporter:
         self.args = args
 
     def export(self, logfilenames):
+        filenames = self.filter_filenames(logfilenames)
+
         if self.args.save_to is None:
-            self.send_to_stdout(logfilenames)
+            self.send_to_stdout(filenames)
         else:
-            self.save_to_file(logfilenames)
+            self.save_to_file(filenames)
 
     def save_to_file(self, logfilenames, filename: str):
         with open(filename, 'w') as file:
@@ -20,6 +24,26 @@ class CSvExporter:
 
     def send_to_stdout(self, logfilenames):
         self.generate(logfilenames, sys.stdout)
+
+    def filter_filenames(self, filenames):
+        if self.args.from_date is None:
+            return filenames
+
+        result = []
+        from_date = parse_date(self.args.from_date)
+
+        for filename in filenames:
+            # Assume 2021-06-03T10_22_31.937915-04_00.log
+            name, _ = os.path.splitext(os.path.basename(filename))
+            match = re.search("^(\d{4}-\d{2}-\d{2})T", name)
+
+            if match is not None:
+                created_at = parse_date(match.group(1))
+
+                if created_at >= from_date:
+                    result.append(filename)
+
+        return result
 
     def header(self, writer):
         writer.writerow([

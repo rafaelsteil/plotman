@@ -44,6 +44,7 @@ class PlotmanArgParser:
         p_export = sp.add_parser('export', help='exports metadata from the plot logs as CSV')
         p_export.add_argument('-o', dest='save_to', default=None, type=str, help='save to file. Optional, prints to stdout by default')
         p_export.add_argument('--skip-header', action='store_true', help="Don't include the CSV header")
+        p_export.add_argument('--from-date', default=None, type=str, help="Only include jobs that started at the specified date. Format is yyyy-mm-dd")
 
         p_config = sp.add_parser('config', help='display or generate plotman.yaml configuration')
         sp_config = p_config.add_subparsers(dest='config_subcommand')
