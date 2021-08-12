@@ -65,7 +65,7 @@ def job_viz(jobs):
 
 # Command: plotman status
 # Shows a general overview of all running jobs
-def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
+def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix='', job_info_only=False):
     '''height, if provided, will limit the number of rows in the table,
        showing first and last rows, row numbers and an elipsis in the middle.'''
     abbreviate_jobs_list = False
@@ -82,9 +82,13 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix=''):
     tab = tt.Texttable()
     headings = ['plot id', 'k', 'tmp', 'dst', 'wall', 'phase', 'tmp',
             'pid', 'stat', 'mem', 'user', 'sys', 'io']
-    if height:
+
+    if height and not job_info_only:
         headings.insert(0, '#')
-    tab.header(headings)
+
+    if not job_info_only:
+      tab.header(headings)
+
     tab.set_cols_dtype('t' * len(headings))
     tab.set_cols_align('r' * len(headings))
     tab.set_header_align('r' * len(headings))
