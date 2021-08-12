@@ -30,6 +30,7 @@ class PlotmanArgParser:
         sp.add_parser('version', help='print the version')
 
         p_status = sp.add_parser('status', help='show current plotting status')
+        p_status.add_argument('--older-than', default=0, type=int, help='Show only jobs that are running more at least the amount of minutes passed as argument')
         p_status.add_argument('--job-info-only', action='store_true', help='Only shows the job row, without headers and additional status information')
 
         sp.add_parser('dirs', help='show directories info')
@@ -181,10 +182,10 @@ def main():
         # Status report
         if args.cmd == 'status':
             if args.job_info_only:
-              result = reporting.status_report(jobs, get_term_width(), job_info_only=True)
+              result = reporting.status_report(jobs, get_term_width(), job_info_only=True, older_than=args.older_than)
             else:
               result = "{0}\n\n{1}\n\nUpdated at: {2}".format(
-                  reporting.status_report(jobs, get_term_width()),
+                  reporting.status_report(jobs, get_term_width(), older_than=args.older_than),
                   reporting.summary(jobs),
                   datetime.datetime.today().strftime("%c"),
               )

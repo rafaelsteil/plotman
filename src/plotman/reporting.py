@@ -65,7 +65,7 @@ def job_viz(jobs):
 
 # Command: plotman status
 # Shows a general overview of all running jobs
-def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix='', job_info_only=False):
+def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix='', job_info_only=False, older_than=0):
     '''height, if provided, will limit the number of rows in the table,
        showing first and last rows, row numbers and an elipsis in the middle.'''
     abbreviate_jobs_list = False
@@ -93,7 +93,12 @@ def status_report(jobs, width, height=None, tmp_prefix='', dst_prefix='', job_in
     tab.set_cols_align('r' * len(headings))
     tab.set_header_align('r' * len(headings))
 
+    older_than_seconds = older_than * 60
+
     for i, j in enumerate(sorted(jobs, key=job.Job.get_time_wall)):
+        if j.get_time_wall() < older_than_seconds:
+          continue
+
         # Elipsis row
         if abbreviate_jobs_list and i == n_begin_rows:
             row = ['...'] + ([''] * len(headings) - 1)
